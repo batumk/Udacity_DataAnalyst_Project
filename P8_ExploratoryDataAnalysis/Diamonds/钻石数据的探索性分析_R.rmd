@@ -1,0 +1,519 @@
+钻石数据的探索性数据分析（R） by Batu Mengkai
+=========================================================
+
+## 1.简介
+此diamonds数据集包含了从diamondsc.info网站收集的自2008年到现在的53940颗钻石的信息。钻石的独特性，与我们常买的制造产品不同，你不能只根据一个型号就能看到价格。下面我将分别探索该数据集的单一变量，两个变量以及多个变量,从而发现钻石的特征与价格之间的关系。
+
+### 数据描述
+
+- carat：克拉
+- cut：切割质量（Fair, Good, Very Good, Premium, Ideal）
+- color：颜色等级（J (最差), I, H, G, F, E, D (最好)）
+- clarity：纯净度等级（I1 (最差), SI2, SI1, VS2, VS1, VVS2, VVS1, IF (最好)）
+- depth：深度比例  （depth = z / mean(x, y) = 2 * z / (x + y) (43–79)）
+- table：钻石顶部相对于最宽点的宽度 (43–95)
+- price：价格in m美元 (326–18,823)
+- "x" "y" "z" ：长宽深 mm
+
+```{r import library and loading data}
+library(ggplot2)
+data(diamonds)
+str(diamonds)
+```
+```{r}
+summary(diamonds)
+```
+
+## 2.探索单一变量
+
+### 2.1 价格分布
+```{r}
+ggplot(data = diamonds, aes(x = price))+
+  geom_histogram(binwidth = 100, color = "black", fill = "blue")+
+  scale_x_continuous(breaks = seq(0,20000,1500))
+
+```
+```{r}
+summary(diamonds$price)
+```
+
+**探索分析：**
+
+- 最小的价格是327美元，最高的是18823美元，50%价格都是小于2401美元，75%价格小于5324美元
+- 从上面直方图我们可以查看，钻石价格分布图呈现右偏态，价格小于1500钻石数量相比其他价格钻石数量更多
+- 人们对价格敏感度是不同，对于工薪阶层，价格相对更敏感，对于土豪，价格对他们不是很敏感
+- 在价格1500左右，有一个空白，这个需要更进一步查看
+- 价格在700左右的钻石数量最多
+
+**价格进行log10数据转化**
+```{r}
+ggplot(data = diamonds, aes(x = price))+
+  geom_histogram(binwidth = 0.01,color = "black", fill = "blue")+
+  scale_x_log10(breaks = c(300,500,800,1000,1500,3000,5000,12000,18000))
+```
+
+**探索分析：**
+
+- 对价格进行log10转化后，发现分布是双峰分布，可能是对于不同消费量级的群体，价格接受程度不同，高消费人群中价格5000左右的钻石是卖的最多，在低消费人群中价格800左右的钻石卖的最多。
+
+### 2.2查看克拉carat分布情况
+
+```{r}
+ggplot(data = diamonds, aes(x = carat))+
+  geom_histogram(binwidth = 0.1)+
+  scale_x_continuous(breaks = seq(0,4,0.25))
+```
+
+```{r}
+ggplot(data = diamonds, aes(x = carat))+
+  geom_histogram(binwidth = 0.01)+
+  scale_x_continuous(breaks = seq(0,4,0.25))
+```
+
+
+```{r}
+summary(diamonds$carat)
+sort(table(diamonds$carat),decreasing = TRUE)[1:20]
+```
+
+**探索分析：**
+
+- 钻石重量最小是0.2克拉，最大是5.01克拉，75%的钻石是小于1.04克拉，从第一个图上按0.1分布看，钻石呈现右偏态，从第二个图按0.01分布看，钻石在特定尺寸出现分布峰值
+
+
+### 2.3 查看不同切割质量(cut)分布
+```{r}
+ggplot(data = diamonds, aes(x = cut))+
+  geom_bar()
+```
+
+```{r}
+table(diamonds$cut)
+```
+
+
+**探索分析：**
+
+- 钻石切割质量是最差到最好的等级是（Fair, Good, Very Good, Premium, Ideal）
+- 从上图的描述统计和条形图可以看出，数量上切割质量为ideal的最多，其次是premium和very good级别的
+
+### 2.3 查看不同颜色质量的钻石数据分布
+
+```{r}
+ggplot(data = diamonds, aes(x = color))+
+  geom_bar()
+```
+```{r}
+table(diamonds$color)
+```
+
+**探索分析：**
+
+- 颜色质量J (最差), I, H, G, F, E, D (最好)
+- 颜色质量为G的钻石数量最多
+- 其次是颜色为EFH的钻石
+
+### 2.4 查看不同纯净度的钻石数据分布
+
+```{r}
+ggplot(data = diamonds, aes(x=clarity))+
+  geom_bar()
+```
+```{r}
+table(diamonds$clarity)
+```
+
+**探索分析：**
+
+- clarity纯净度等级I1 (最差), SI2, SI1, VS2, VS1, VVS2, VVS1, IF (最好)
+- 从上面的分布图可以看出，纯净度质量高的钻石数量相比纯净度质量低的数量要少
+- 纯净度质量为SI1,VS2的钻石数量最多，其次是SI2,VS1
+
+### 2.5 查看钻石尺寸数据的分布
+
+#### x,y,z（钻石长、宽、深）尺寸的分布
+
+```{r}
+p1<- ggplot(data = diamonds, aes(x = x))+
+  geom_histogram(binwidth = 0.1)
+p2<- ggplot(data = diamonds, aes(x = y))+
+  geom_histogram(binwidth = 0.1)
+p3<- ggplot(data = diamonds, aes(x = z))+
+  geom_histogram(binwidth = 0.1)
+
+library(gridExtra)
+grid.arrange(p1,p2,p3, ncol=1 )
+```
+
+由于y,z有异常值，我们现在显示数据集中部分
+
+```{r}
+p1<- ggplot(data = diamonds, aes(x = x))+
+  geom_histogram(binwidth = 0.1)+
+  scale_x_continuous(breaks = seq(0,10,1))
+p2<- ggplot(data = diamonds, aes(x = y))+
+  geom_histogram(binwidth = 0.1)+
+  scale_x_continuous(breaks = seq(0,10,1))+
+  coord_cartesian(xlim = c(0,10))
+
+p3<- ggplot(data = diamonds, aes(x = z))+
+  geom_histogram(binwidth = 0.1)+
+  scale_x_continuous(breaks = seq(0,10,1))+
+  coord_cartesian(xlim = c(0,10))
+
+library(gridExtra)
+grid.arrange(p1,p2,p3, ncol=1 )
+```
+
+**探索分析：**
+
+- 从上图可以看出，钻石长度x范围主要在4-9mm, 钻石宽度y范围在4-9mm,钻石深度z范围在2-5.5mm
+
+
+#### 钻石深度比例depth分布
+深度比例公式：depth = z / mean(x, y) = 2 * z / (x + y) (43–79)
+
+```{r}
+ggplot(data = diamonds, aes(x = depth))+
+  geom_histogram(binwidth = 0.1)+
+  scale_x_continuous(breaks = seq(50,70,2.5))
+```
+```{r}
+summary(diamonds$depth)
+```
+
+
+**探索分析：**
+
+- 钻石的深度比例分布呈现正太分布
+- 钻石的深度比例主要集中在61.8-62.5区间，中位数为61.8，平均值为61.75
+
+
+#### 钻石table值的分布
+table是钻石顶部相对于最宽点的宽度 (范围43–95)
+
+```{r}
+p1<- ggplot(data = diamonds, aes(x = table))+
+  geom_histogram(binwidth = 1)
+
+p2<- ggplot(data = diamonds, aes(x = table))+
+  geom_histogram(binwidth = 0.5)
+
+grid.arrange(p1,p2,ncol = 1)
+```
+
+```{r}
+sort(table(diamonds$table),decreasing = TRUE)[1:20]
+```
+
+**探索分析：**
+
+- table按照宽度1分布，呈现正态分布，将宽度调整为0.5,发现数据呈现离散情况，根据table各值统计情况看，table值主要集中在52-67的整数上
+
+### 2.6 通过对单一变量分析得到以下总结：
+
+1. 价格分布呈现右偏态，50%的钻石价格小于2401美元，75%的钻石价格小于5324美元
+2. 75%的钻石重量小于1.04克拉
+3. 切割质量等级ideal的钻石最多，其次是premium和very good
+4. 大多数钻石颜色等级是在G或比G更高的等级
+5. 大多数钻石纯净度在SI2,SI1,VS2,VS1水平，纯净度SI1的钻石最多
+
+## 3.探索两个变量之间关系：
+
+### 3.1 变量间关系矩阵
+```{r}
+library(ggplot2)
+library(GGally)
+library(scales)
+library(memisc)
+set.seed(20022012)
+diamond_samp <- diamonds[sample(1:length(diamonds$price), 10000), ]#数据量很大，所以每个变量抽样选取10000个值
+ggpairs(diamond_samp, 
+  lower = list(continuous = wrap("points", shape = I('.'))), 
+  upper = list(combo = wrap("box", outlier.shape = I('.'))),
+  axisLabels ='internal')
+```
+
+**探索分析：**
+
+- 此图大略建立各变量之间的关系认识，我比较关心的是价格和哪些因素有关系
+- 价格其他变量的相关系数中，与table,depth是低度相关，与克拉carat是高度相关，与尺寸x,y,z都是高度相关
+- 从cut,color,clarity箱形图形可以看出，颜色和纯净度的中位数随着价格有变化趋势
+
+### 3.2 价格和克拉之间的关系
+
+```{r}
+ggplot(data = diamonds, aes(x = carat, y = price))+
+  geom_point()
+```
+```{r}
+ggplot(data = subset(diamonds,carat <= quantile(diamonds$carat,0.99)), aes(x = carat, y = price))+
+  geom_point()
+  
+```
+
+```{r}
+with(diamonds, cor.test(x = carat, y = price, method = "pearson"))
+```
+**探索分析：**
+
+- 随着钻石重量克拉的增加，价格呈现类似指数上升趋势，不是完全的线性关系，相关系数是0.922
+- 同一重量的钻石，价格出现分离，跟钻石其他特征可能有关系，需要进一步探索
+
+
+### 3.3 价格和颜色之间的关系
+
+```{r}
+ggplot(data = diamonds, aes(x = color, y = price))+
+  geom_boxplot()
+```
+```{r}
+ggplot(data = diamonds, aes(x = color, y = price))+
+  geom_boxplot()+
+  coord_cartesian(ylim = c(0,10000))
+```
+
+```{r}
+ggplot(data = diamonds, aes(x= price))+
+  geom_histogram(binwidth = 100)+
+  facet_wrap(~color, ncol = 2, scales = "free_y")
+```
+
+**探索分析：**
+
+- 从中位数对比看，随着颜色越好（D最好，J最差），价格反而在下降，这个很奇怪，可能价格高的钻石较大但是颜色质量差一些，还有就是J类型钻石数量比较少
+
+### 3.4 价格和切割质量之间的关系
+
+```{r}
+ggplot(data = diamonds, aes(x = cut, y = price))+
+  geom_boxplot()
+```
+```{r}
+ggplot(data = diamonds, aes(x = cut, y = price))+
+  geom_boxplot()+
+  coord_cartesian(ylim = c(0,8000))
+```
+```{r}
+by(diamonds$price, diamonds$cut, summary)
+```
+
+```{r}
+ggplot(data = diamonds, aes(x = price))+
+  geom_histogram(binwidth = 100)+
+  facet_wrap(~cut, scales = "free_y")
+```
+
+
+**探索分析：**
+
+- 对比中位数，切割质量为ideal的中位数最低,按常理是切割质量更好的钻石价格会更好
+- 随着切割质量越好，价格中位数出现降低趋势，但不是绝对明显
+
+### 3.5 价格和纯净度之间的关系
+
+```{r}
+ggplot(data = diamonds, aes(x = clarity, y = price ))+
+  geom_boxplot()
+```
+```{r}
+ggplot(data = diamonds, aes(x = clarity, y = price ))+
+  geom_boxplot()+
+  coord_cartesian(ylim = c(0,10000))
+```
+
+```{r}
+by(diamonds$price, diamonds$clarity, summary)
+```
+
+```{r}
+ggplot(data = diamonds, aes(x = price))+
+  geom_histogram(binwidth = 100)+
+  facet_wrap(~clarity, scales = "free_y", ncol = 2)
+```
+
+
+**探索分析**
+
+- I1 (最差)- IF (最好)
+- 随着纯净度提高，钻石价格反而降低，纯净度最高的钻石价格中位数最低，这个不符合之前的直觉
+- 随着钻石纯净度升高，钻石价格的离散程度逐渐变大再变小
+
+### 3.6 价格与分别与深度比例depth和table值的关系
+
+```{r price vs depth}
+ggplot(data = diamonds, aes(x = depth, y = price))+
+  geom_point(alpha = 1/100, position = position_jitter())
+```
+
+```{r}
+summary(diamonds$depth)
+```
+```{r}
+ggplot(data = diamonds, aes(x = table, y = price))+
+  geom_point(alpha = 1/100, position = position_jitter())+
+  coord_cartesian(xlim = c(50,70))
+```
+
+**探索分析**
+
+- 随着depth,table增加，价格没有明显变化趋势
+- depth,table对影响价格变化不是很大
+
+### 3.7 通过对两个变量之间关系分析得到以下总结：
+
+1. 钻石价格与钻石克拉数及x,y,z尺寸有很强的相关性，符合常理，因为钻石越大价格越高
+2. 钻石价格与depth,table没有出现明显相关性趋势
+3. 随着纯净度提高，钻石价格反而降低，纯净度最高的钻石价格中位数最低，这个不符合之前的直觉
+4. 对比不同切割质量的价格中位数，切割质量为ideal的价格中位数最低,按常理是切割质量更好的钻石价格会更好，随着切割质量越好，价格中位数出现降低趋势，但不是绝对明显
+5. 对比不同颜色对应价格的中位数，随着颜色越好（D最好，J最差），价格反而在下降，这个很奇怪，可能价格高的钻石较大但是颜色质量差一些，还有就是J类型钻石数量比较少
+
+## 4.探索多个变量之间的分析
+
+### 4.1 对价格和克拉进行数据转化
+
+- 价格受不同消费层级以及通货膨胀影响，所以进行log10转化压缩
+```{r}
+ggplot(data = diamonds, aes(x = carat, y = price))+
+  geom_point()+
+  scale_y_log10()
+```
+
+- 可以相关性更靠近线性了
+- 现在对克拉进行开立方的转化，因为体积单位是立方的，将其转化到立方上查看
+
+```{r}
+cuberoot_trans = function() trans_new('cuberoot', transform = function(x) x^(1/3),
+                                      inverse = function(x) x^3)
+#这个函数是将数值开立方根的函数
+
+ggplot(aes(carat, price), data = diamonds) +
+  geom_point() +
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+                     breaks = c(0.2, 0.5, 1, 2, 3)) +
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+                     breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat')  
+```
+```{r}
+with(diamonds, cor.test(x = log10(price), y = carat^1/3), method = "pearson")
+```
+
+- 可以观察到，log10(price)和carat^1/3之家有线性关系, 线性关系强度为0.92，高度相关
+
+### 4.2 价格、克拉及颜色三者的关系
+
+```{r}
+ggplot(data = diamonds, aes(x = carat, y = price, color = color))+
+  geom_point(alpha= 1/2,position = position_jitter())+
+  scale_x_continuous(trans = cuberoot_trans())+
+  scale_y_continuous(trans = log10_trans())+
+  scale_color_brewer(type = 'div',
+                     guide = guide_legend(title = 'Color', reverse = T,
+                                          override.aes = list(alpha = 1, size = 2)))
+```
+
+**探索分析**
+
+- 从上图可以看出，在同一颜色下，log10(price)和carat^1/3呈现线性关系
+- 在同一克拉下，颜色越好，其价格就越高
+
+### 4.3 价格、克拉及切割质量三者的关系
+
+```{r}
+ggplot(data = diamonds, aes(x = carat, y = price, color = cut))+
+  geom_point(alpha = 1/2, position = position_jitter())+
+  scale_x_continuous(trans = cuberoot_trans())+
+  scale_y_continuous(trans = log10_trans())
+```
+
+**探索分析：**
+- 同一克拉下，价格没有出现明显的分离，切割质量对于价格影响不是很大
+
+### 4.4 价格、克拉及纯净度三者的关系
+
+```{r}
+ggplot(data = diamonds, aes(x = carat, y = price, color = clarity))+
+  geom_point(alpha = 1/2, position = position_jitter())+
+  scale_x_continuous(trans = cuberoot_trans())+
+  scale_y_continuous(trans = log10_trans())
+```
+**探索分析**
+
+- 可以发现纯净度出现了分离
+- 同一克拉钻石，随着纯净度质量越高，价格就越高
+
+### 4.5 价格、table及切割质量之间关系
+
+```{r}
+ggplot(data = diamonds, aes(x = table, y = price, color = cut))+
+  geom_point(alpha = 1/5, position = position_jitter())+
+  scale_x_continuous(limits = c(50,80), breaks = seq(50,80,2))
+```
+
+
+**探索分析：**
+
+- 可以发现不同切割质量的钻石的table范围不同,说明钻石切割质量和table参数有一定相关性
+- 切割质量ideal的钻石范围为53-57，premium和very good的钻石的table范围为58-62，good和fair的钻石的table在63-68
+- 钻石切割质量越好，table值会相比越小,
+ 
+### 4.6 模拟预测价格的模型
+
+- 通过以上探索分析，我们发现价格与克拉、颜色、切割质量有较强的相关性,可以用线性回归进行模拟
+- 钻石价格与table,depth深度比例，相关性较低，不加入模型来预测价格
+- 又介于克拉与x,y,z有很强的相关性，避免多重共线性导致模型不准，不加入模型预测价格
+
+```{r}
+m1<- lm(formula = I(log(price))~I(carat^(1/3)),data = diamonds)
+m2<- lm(formula = I(log(price))~I(carat^(1/3))+carat,data = diamonds)
+m3<- lm(formula = I(log(price))~I(carat^(1/3))+carat+color,data = diamonds)
+m4<- lm(formula = I(log(price))~I(carat^(1/3))+carat+color+cut,data = diamonds)
+m5<- lm(formula = I(log(price))~I(carat^(1/3))+carat+color+cut+clarity,data = diamonds)
+
+mtable(m1,m2,m3,m4,m5)
+```
+
+预测钻石价格：
+
+carat为1.01，cut为Ideal，color为E，clarity为VS2的钻石的价格，置信区域为0.95：
+
+```{r}
+diamond1 <- data.frame(carat = 1.01, cut = "Ideal", color = "E", clarity = "VS2")
+
+pred_price <- predict(m5, newdata = diamond1, interval = "prediction", level = 0.95)
+
+exp(pred_price)
+
+```
+95%置信水平上，预测的钻石价格的区间在4842.667-8018.689
+
+**探索说明：**
+
+- 从模型参数来看，该模型中变量可以解释98.4%的price变量
+- 单用变量carat模拟模型，只能解释93.5%的price变量
+- 钻石价格不仅仅只受模型中变量的影响，也会受其他未考虑因素的影响，比如通货膨胀、供需关系、以及购买时间等等因素，不能过分依赖模型
+
+### 4.7 多变量之间关系分析总结
+
+- log10(price)和carat^1/3之间有线性关系, 线性关系强度为0.92，高度相关
+- 颜色，价格和克拉之间的关系：在同一颜色下，log10(price)和carat^1/3呈现线性关系，在同一克拉下，颜色越好，其价格就越高
+- 切割质量、价格和克拉之间关系：同一克拉下，价格没有出现明显的分离，切割质量对于价格影响不是明显
+- 纯净度、价格和克拉之间的关系：同一克拉钻石，可以发现纯净度出现了分离，随着纯净度质量越高，价格就越高
+- table、价格和切割质量之间的关系：同一价格下，可以发现不同切割质量的钻石的table范围不同,说明钻石切割质量和table参数有一定相关性，切割质量ideal的钻石范围为53-57，premium和very good的钻石的table范围为58-62，good和fair的钻石的table在63-68，钻石切割质量越好，table值会相比越小
+- 拟合模型：通过探索分析发现，价格跟克拉数、颜色、纯净度、切割质量有相关性，使用这些变量拟合预测价格的模型，得到98.4%的价格变量可以用模型中的变量解释结果。
+
+
+## 5.总结与反思
+
+1. 此次探索分析我主要围绕钻石价格受哪些因素的影响展开，分别通过对单一变量分布，双变量以及多变量之间关系分析，来理解数据结构及数据之间的关系，最后根据建立的变量间关系，拟合了预测钻石价格的模型。
+2. 介于对钻石行业及相关参数的理解不到位，不能很好的解释和深入分析一些情况，需要进一步对钻石的了解，来挖掘这些问题，如对比不同纯净度的价格中位数发现纯净度最高的钻石价格中位数最低，对比不同切割质量钻石的价格中位数时发现切割质量最高的价格中位数最低，以及同一克拉钻石，切割质量和价格关系没有明显趋势
+4. 本次探索数据分析对我未来数据分析工作提供了一个思考框架：
+
+ - 了解数据源及数据结构和数据类型
+ - 单一变量分析及总结：探索单一变量理解各个变量的分布及情况，了解兴趣点
+ - 双变量分析及总结：根据目的，探索两个变量之间的关系
+ - 多变量分析及总结：基于前两个分析，深入分析变量间的关系，深刻理解数据
+ - 迭代探索分析过程
+ - 总结分析的结果，交流结果
+ - 总结与反省
